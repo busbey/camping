@@ -43,6 +43,37 @@ $AR_EXTRAS = %{
       end
     end
   end
+
+  def self.Base(opts={}, &block)
+    Class.new(ActiveRecord::Base) do  
+	  meta_def(:inherited) do |model|
+	    Class.new(V -1/(1+@migrations.size)) do
+		  @table = eval("\#{model} = Class.new(ActiveRecord::Base)")
+		  def self.up
+		    queue = Array.new
+		    create_table @table.table_name do |t| 
+			  def t.create attributes, &block
+				queue << [attributes, block]
+		  	  end
+			  block.call t 
+			end
+			queue.each do |entry|
+			  @table.create *entry
+			end
+		  end
+		  def self.down
+		    drop_table @table.table_name
+		  end
+		end
+	  end
+	end
+  end
+}
+
+$AR_CREATE = %{
+  def self.create
+    Models.create_schema
+  end
 }
 
 module Camping
@@ -69,7 +100,8 @@ module Camping
     module_eval $AR_EXTRAS
   end
 end
-Camping::S.sub! /autoload\s*:Base\s*,\s*['"]camping\/ar['"]/, $AR_EXTRAS
+Camping::S.sub! /autoload\s*:Base\s*,\s*['"]camping\/ar['"]\s*end/, "#{$AR_EXTRAS}\n\tend\n#{$AR_CREATE}"
 Camping::Apps.each do |c|
   c::Models.module_eval $AR_EXTRAS
+  c.module_eval $AR_CREATE
 end
