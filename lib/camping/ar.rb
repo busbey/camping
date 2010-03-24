@@ -7,8 +7,8 @@ rescue LoadError => e
 end
 
 $AR_EXTRAS = %{
+  puts "extra fun for \#{self.inspect}"
   Base = ActiveRecord::Base unless const_defined? :Base
-
   class SchemaInfo < Base
   end
 
@@ -44,11 +44,13 @@ $AR_EXTRAS = %{
     end
   end
 
+  def self.binding binding; end
   def self.Base(opts={}, &block)
-    Class.new(ActiveRecord::Base) do  
+    puts "function!"
+    Class.new(Base) do  
 	  meta_def(:inherited) do |model|
 	    Class.new(V -1/(1+@migrations.size)) do
-		  @table = eval("\#{model} = Class.new(ActiveRecord::Base)")
+		  @table = eval("\#{model.to_s} = Class.new(Base)", self.binding)
 		  def self.up
 		    queue = Array.new
 		    create_table @table.table_name do |t| 
@@ -86,7 +88,7 @@ module Camping
     # ActiveRecord is not loaded if you never reference this class.  The minute you
     # use the ActiveRecord or Camping::Models::Base class, then the ActiveRecord library
     # is loaded.
-    Base = A::Base
+	Base = A::Base
 
     # The default prefix for Camping model classes is the topmost module name lowercase
     # and followed with an underscore.
@@ -100,7 +102,7 @@ module Camping
     module_eval $AR_EXTRAS
   end
 end
-Camping::S.sub! /autoload\s*:Base\s*,\s*['"]camping\/ar['"]\s*end/, "#{$AR_EXTRAS}\n\tend\n#{$AR_CREATE}"
+Camping::S.sub! /autoload\s*:Base\s*,\s*['"]camping\/ar['"]\s*;?\s*end/, "#{$AR_EXTRAS}\n\tend\n#{$AR_CREATE}"
 Camping::Apps.each do |c|
   c::Models.module_eval $AR_EXTRAS
   c.module_eval $AR_CREATE
