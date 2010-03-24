@@ -47,9 +47,11 @@ $AR_EXTRAS = %{
   def self.binding binding; end
   def self.Base(opts={}, &block)
     puts "function!"
+	m = (@migrations ||= [])
+	v = Proc.new do |arg| V arg end
     Class.new(Base) do  
 	  meta_def(:inherited) do |model|
-	    Class.new(V -1/(1+@migrations.size)) do
+	    Class.new(v.call(-1/(1+m.size))) do
 		  @table = eval("\#{model.to_s} = Class.new(Base)", self.binding)
 		  def self.up
 		    queue = Array.new
