@@ -49,17 +49,20 @@ $AR_EXTRAS = %{
 	v = Proc.new do |arg| V arg end
     Class.new(Base) do  
 	  meta_def(:inherited) do |model|
+	    b = Proc.new do |t|  block.call t end
 	    Class.new(v.call(-1/(1+m.size))) do
 		  @table = eval("\#{model.to_s} = Class.new(Base)", self.binding)
+		  @block = b
+		  @queue = Array.new
 		  def self.up
-		    queue = Array.new
 		    create_table @table.table_name do |t| 
+			  later = Proc.new do |entry| @queue << entry; end
 			  def t.create attributes, &block
-				queue << [attributes, block]
+			    later.call([attributes, block])
 		  	  end
-			  block.call t 
+			  @block.call t 
 			end
-			queue.each do |entry|
+			@queue.each do |entry|
 			  @table.create *entry
 			end
 		  end
