@@ -6,18 +6,13 @@ require 'camping/ar'
 require 'camping/session'
 require 'redcloth'
 
-Camping.goes :Blog
+Camping.goes :MigratoryBlog
 
-module Blog
+module MigratoryBlog
   include Camping::Session
 
   module Models
-    class Post < Base do |t|
-        t.integer :user_id, :null => false
-        t.string  :title,   :limit => 255
-        t.text    :body, :html_body
-        t.timestamps
-      end
+    class Post < Base
       belongs_to :user
       
       before_save do |record|
@@ -27,19 +22,35 @@ module Blog
       end
     end
     
-    class Comment < Base do |t|
-        t.integer :post_id,	:null => false
-        t.string  :username
-        t.text    :body, :html_body
-        t.timestamps
-      end 
-      belongs_to :user
-	end
-    class User < Base do |t|
-        t.string :username, :password
-        t.create :username => 'admin', :password => 'camping'
+    class Comment < Base; belongs_to :user; end
+    class User < Base; end
+
+    class BasicFields < V 1.1
+      def self.up
+        create_table :blog_posts, :force => true do |t|
+          t.integer :user_id,          :null => false
+          t.string  :title,            :limit => 255
+          t.text    :body, :html_body
+          t.timestamps 
+        end
+        create_table :blog_users, :force => true do |t|
+          t.string  :username, :password
+        end
+        create_table :blog_comments, :force => true do |t|
+          t.integer :post_id,          :null => false
+          t.string  :username
+          t.text    :body, :html_body
+          t.timestamps
+        end
+        User.create :username => 'admin', :password => 'camping'
       end
-	end
+      
+      def self.down
+        drop_table :blog_posts
+        drop_table :blog_users
+        drop_table :blog_comments
+      end
+    end
   end
 
   module Controllers
@@ -248,6 +259,10 @@ module Blog
       end
     end
   end
+end
+
+def MigratoryBlog.create
+  MigratoryBlog::Models.create_schema :assume => (MigratoryBlog::Models::Post.table_exists? ? 1.0 : 0.0)
 end
 
 __END__
