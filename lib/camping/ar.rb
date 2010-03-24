@@ -53,17 +53,17 @@ $AR_EXTRAS = %{
 	    Class.new(v.call(-1/(1+m.size))) do
 		  @table = eval("\#{model.to_s} = Class.new(Base)", self.binding)
 		  @block = b
-		  @queue = Array.new
 		  def self.up
+		    queue = Array.new
+			later = Proc.new do |attributes, &block|
+			  queue << [attributes, block]
+			end
 		    create_table @table.table_name do |t| 
-			  later = Proc.new do |entry| @queue << entry; end
-			  def t.create attributes, &block
-			    later.call([attributes, block])
-		  	  end
+			  (class << t; self; end).class_eval do define_method(:create, &later); end
 			  @block.call t 
 			end
-			@queue.each do |entry|
-			  @table.create *entry
+			queue.each do |attributes, block|
+			  @table.create attributes
 			end
 		  end
 		  def self.down
