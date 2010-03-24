@@ -21,7 +21,7 @@ $AR_EXTRAS = %{
   end
 
   def self.create_schema(opts = {})
-    opts[:assume] ||= 0
+    opts[:assume] ||= -2
     opts[:version] ||= @final
     if @migrations
       unless SchemaInfo.table_exists?
