@@ -73,8 +73,10 @@ $AR_EXTRAS = %{
 }
 
 $AR_CREATE = %{
-  def self.create
-    Models.create_schema
+  unless method_defined? :create
+    def self.create
+      Models.create_schema
+    end
   end
 }
 
