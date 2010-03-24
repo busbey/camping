@@ -7,7 +7,6 @@ rescue LoadError => e
 end
 
 $AR_EXTRAS = %{
-  puts "extra fun for \#{self.inspect}"
   Base = ActiveRecord::Base unless const_defined? :Base
   class SchemaInfo < Base
   end
@@ -46,7 +45,6 @@ $AR_EXTRAS = %{
 
   def self.binding binding; end
   def self.Base(opts={}, &block)
-    puts "function!"
 	m = (@migrations ||= [])
 	v = Proc.new do |arg| V arg end
     Class.new(Base) do  
