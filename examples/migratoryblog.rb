@@ -27,16 +27,16 @@ module MigratoryBlog
 
     class BasicFields < V 1.1
       def self.up
-        create_table :blog_posts, :force => true do |t|
+        create_table :migratoryblog_posts, :force => true do |t|
           t.integer :user_id,          :null => false
           t.string  :title,            :limit => 255
           t.text    :body, :html_body
           t.timestamps 
         end
-        create_table :blog_users, :force => true do |t|
+        create_table :migratoryblog_users, :force => true do |t|
           t.string  :username, :password
         end
-        create_table :blog_comments, :force => true do |t|
+        create_table :migratoryblog_comments, :force => true do |t|
           t.integer :post_id,          :null => false
           t.string  :username
           t.text    :body, :html_body
@@ -46,9 +46,9 @@ module MigratoryBlog
       end
       
       def self.down
-        drop_table :blog_posts
-        drop_table :blog_users
-        drop_table :blog_comments
+        drop_table :migratoryblog_posts
+        drop_table :migratoryblog_users
+        drop_table :migratoryblog_comments
       end
     end
   end
@@ -259,11 +259,16 @@ module MigratoryBlog
       end
     end
   end
+  def self.create
+    MigratoryBlog::Models.create_schema :assume => (MigratoryBlog::Models::Post.table_exists? ? 1.0 : 0.0)
+  end
 end
 
+=begin
 def MigratoryBlog.create
   MigratoryBlog::Models.create_schema :assume => (MigratoryBlog::Models::Post.table_exists? ? 1.0 : 0.0)
 end
+=end
 
 __END__
 * {
