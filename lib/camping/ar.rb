@@ -55,6 +55,7 @@ $AR_EXTRAS = %{
   \# When you finally need a non-destructive table change adding a migration with a positive
   \# number will run as expected, but will preclude further automatic table creation. :(
   def self.Base(opts={}, &block)
+    @final = -2 if @final.nil?	
 	v = V -1.0/(1+(@migrations ||= []).size)
     Class.new(Base) do  
 	  @abstract_class = true
