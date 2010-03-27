@@ -21,30 +21,26 @@ $AR_EXTRAS = %{
   end
   
   def self.create_schema(opts = {})
-    if @magicMigrations
+    if @autoMigrations
 	  m = (@migrations ||= [])
-	  @magicMigrations.each do |model, options, block|
-		table = Object
-		model.split(/::/u).each do |part| table = table.const_get(part); end 
+	  @autoMigrations.each do |model, options, block|
 	    Class.new(V -1.0/(1+m.size)) do
-		  @options = options
-          @block = block
-		  @table = table
+		  @model = model; @options = options; @block = block
           def self.up
-            queue = []
+            q = []
             later = Proc.new do |attributes, &b|
-              queue << [attributes, b]
+              q << [attributes, b]
             end
-			create_table @table.table_name, @options do |t|
+			create_table @model.table_name, @options do |t|
 			  (class << t; self; end).class_eval do define_method(:create, &later); end
 			  @block.call t
 			end
-            queue.each do |attributes, b|
-			  @table.create attributes, &b
+            q.each do |attributes, b|
+			  @model.create attributes, &b
 			end
 		  end
 		  def self.down
-		    drop_table @table.table_name
+		    drop_table @model.table_name
 		  end
 		end
 	  end
@@ -72,12 +68,15 @@ $AR_EXTRAS = %{
     end
   end
 
+  \# Since classes can't take blocks, we use a function that looks like the Base class
+  \# and then define a derivative of Base on the fly.  We can then tie the model that
+  \# inherits our singleton to the block of code the user gave for table creation.
   def self.Base(opts={}, &block)
-	m = (@magicMigrations ||= [])
+	m = (@autoMigrations ||= [])
     Class.new(Base) do  
 	  @abstract_class = true
 	  meta_def(:inherited) do |model|
-	    m << [model.to_s, opts, block]
+	    m << [model, opts, block]
 		super
 	  end
 	end
