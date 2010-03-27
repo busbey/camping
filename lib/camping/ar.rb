@@ -6,7 +6,7 @@ rescue LoadError => e
     raise MissingLibrary, "ActiveRecord could not be loaded (is it installed?): #{e.message}"
 end
 
-$AR_EXTRAS = %{
+$AR_EXTRAS =<<END
   Base = ActiveRecord::Base unless const_defined? :Base
 
   class SchemaInfo < Base
@@ -45,16 +45,16 @@ $AR_EXTRAS = %{
     end
   end
 
-  \# Since classes can't take blocks, we use a function that looks like the Base class
-  \# and then define a derivative of Base on the fly.  We can then tie the model that
-  \# inherits our singleton to the block of code the user gave for table creation.
-  \# Presto! a migration pops into existence for each model we create.
-  \#
-  \# So long as new models are added after existing models, we should correctly keep
-  \# adding them in.
-  \#
-  \# When you finally need a non-destructive table change adding a migration with a positive
-  \# number will run as expected, but will preclude further automatic table creation. :(
+  # Since classes can't take blocks, we use a function that looks like the Base class
+  # and then define a derivative of Base on the fly.  We can then tie the model that
+  # inherits our singleton to the block of code the user gave for table creation.
+  # Presto! a migration pops into existence for each model we create.
+  #
+  # So long as new models are added after existing models, we should correctly keep
+  # adding them in.
+  #
+  # When you finally need a non-destructive table change adding a migration with a positive
+  # number will run as expected, but will preclude further automatic table creation. :(
   def self.Base(opts={}, &block)
     @final = -2 if @final.nil?	
     v = V -1.0/(1+(@migrations ||= []).size)
@@ -81,20 +81,21 @@ $AR_EXTRAS = %{
             drop_table @model.table_name
           end
         end
+        # Make sure Base can do its magic
         super
       end
     end
   end
-}
+END
 
-$AR_CREATE = %{
-  \# We assume that if they've defined a create method, they will handle wether or not to ask for a migration check.
+$AR_CREATE =<<END
+  # We assume that if they've defined a create method, they will handle wether or not to ask for a migration check.
   unless method_defined? :create
     def self.create
       Models.create_schema
     end
   end
-}
+END
 
 module Camping
   module Models
