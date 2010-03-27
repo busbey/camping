@@ -62,23 +62,27 @@ $AR_EXTRAS =<<END
       @abstract_class = true
       @V = v
       meta_def(:inherited) do |model|
-        Class.new(@V) do
-          @model = model; @opts = opts; @block = block
-          def self.up
-            q = []
-            later = Proc.new do |attributes, &b|
-              q << [attributes, b]
+        # We only need a migration when our direct descendant comes to be
+        if @V
+          Class.new(@V) do
+            @model = model; @opts = opts; @block = block
+            def self.up
+              q = []
+              later = Proc.new do |attributes, &b|
+                q << [attributes, b]
+              end
+              create_table @model.table_name, @opts do |t|
+                # We need the block to execute in scope where it was defined, not in the class' scope
+                (class << t; self; end).class_eval do define_method(:create, &later); end
+                @block.call t
+              end
+              q.each do |attributes, b|
+                @model.create attributes, &b
+              end
             end
-            create_table @model.table_name, @opts do |t|
-              (class << t; self; end).class_eval do define_method(:create, &later); end
-              @block.call t
+            def self.down
+              drop_table @model.table_name
             end
-            q.each do |attributes, b|
-              @model.create attributes, &b
-            end
-          end
-          def self.down
-            drop_table @model.table_name
           end
         end
         # Make sure Base can do its magic
