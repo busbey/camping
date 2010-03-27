@@ -87,6 +87,7 @@ $AR_EXTRAS = %{
 }
 
 $AR_CREATE = %{
+  \# We assume that if they've defined a create method, they will handle wether or not to ask for a migration check.
   unless method_defined? :create
     def self.create
       Models.create_schema
