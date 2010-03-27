@@ -12,11 +12,11 @@ module Blog
   include Camping::Session
 
   module Models
-    class Post < Base do |t|
-        t.integer :user_id, :null => false
-        t.string  :title,   :limit => 255
-        t.text    :body, :html_body
-        t.timestamps
+    class Post < Base do
+        integer :user_id, :null => false
+        string  :title, :limit => 255
+        text    :body, :html_body
+        timestamps
       end
       belongs_to :user
       
@@ -27,17 +27,17 @@ module Blog
       end
     end
     
-    class Comment < Base do |t|
-        t.integer :post_id,	:null => false
-        t.string  :username
-        t.text    :body, :html_body
-        t.timestamps
+    class Comment < Base do
+        integer :post_id, :null => false
+        string  :username
+        text    :body, :html_body
+        timestamps
       end 
       belongs_to :user
 	end
-    class User < Base do |t|
-        t.string :username, :password
-        t.create :username => 'admin', :password => 'camping'
+    class User < Base do
+        string :username, :password
+        create :username => 'admin', :password => 'camping'
       end
 	end
   end
