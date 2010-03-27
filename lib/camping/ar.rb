@@ -19,10 +19,39 @@ $AR_EXTRAS = %{
       meta_def(:inherited) { |k| m << k }
     end
   end
-
+  
   def self.create_schema(opts = {})
+    if @magicMigrations
+	  m = (@migrations ||= [])
+	  @magicMigrations.each do |model, options, block|
+		table = Object
+		model.split(/::/u).each do |part| table = table.const_get(part); end 
+	    Class.new(V -1.0/(1+m.size)) do
+		  @options = options
+          @block = block
+		  @table = table
+          def self.up
+            queue = []
+            later = Proc.new do |attributes, &b|
+              queue << [attributes, b]
+            end
+			create_table @table.table_name, @options do |t|
+			  (class << t; self; end).class_eval do define_method(:create, &later); end
+			  @block.call t
+			end
+            queue.each do |attributes, b|
+			  @table.create attributes, &b
+			end
+		  end
+		  def self.down
+		    drop_table @table.table_name
+		  end
+		end
+	  end
+	end
     opts[:assume] ||= -2
     opts[:version] ||= @final
+
     if @migrations
       unless SchemaInfo.table_exists?
         ActiveRecord::Schema.define do
@@ -43,33 +72,13 @@ $AR_EXTRAS = %{
     end
   end
 
-  def self.binding binding; end
   def self.Base(opts={}, &block)
-	m = (@migrations ||= [])
-	v = Proc.new do |arg| V arg end
+	m = (@magicMigrations ||= [])
     Class.new(Base) do  
+	  @abstract_class = true
 	  meta_def(:inherited) do |model|
-	    b = Proc.new do |t|  block.call t end
-	    Class.new(v.call(-1/(1+m.size))) do
-		  @table = eval("\#{model.to_s} = Class.new(Base)", self.binding)
-		  @block = b
-		  def self.up
-		    queue = Array.new
-			later = Proc.new do |attributes, &block|
-			  queue << [attributes, block]
-			end
-		    create_table @table.table_name do |t| 
-			  (class << t; self; end).class_eval do define_method(:create, &later); end
-			  @block.call t 
-			end
-			queue.each do |attributes, block|
-			  @table.create attributes
-			end
-		  end
-		  def self.down
-		    drop_table @table.table_name
-		  end
-		end
+	    m << [model.to_s, opts, block]
+		super
 	  end
 	end
   end
