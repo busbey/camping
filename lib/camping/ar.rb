@@ -72,8 +72,7 @@ $AR_EXTRAS =<<END
                 q << [attributes, b]
               end
               create_table @model.table_name, @opts do |t|
-                # We need the block to execute in scope where it was defined, not in the class' scope
-                (class << t; self; end).class_eval do define_method(:create, &later); end
+                t.meta_def(:create, &later)
                 t.instance_eval &@block
               end
               q.each do |attributes, b|
