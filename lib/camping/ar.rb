@@ -36,7 +36,7 @@ $AR_EXTRAS =<<END
 
       si = SchemaInfo.find(:first) || SchemaInfo.new(:version => opts[:assume])
       if si.version < opts[:version]
-        (@migrations.sort do |a,b| a.version <=> b.version end).each do |k|
+        @migrations.sort_by(&:version).each do |k|
           k.migrate(:up) if si.version < k.version and k.version <= opts[:version]
           k.migrate(:down) if si.version > k.version and k.version > opts[:version]
         end
@@ -92,7 +92,7 @@ $AR_EXTRAS =<<END
 END
 
 $AR_CREATE =<<END
-  # We assume that if they've defined a create method, they will handle wether or not to ask for a migration check.
+  # We assume that if they've defined a create method, they will handle whether or not to ask for a migration check.
   unless method_defined? :create
     def self.create
       Models.create_schema
