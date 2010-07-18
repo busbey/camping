@@ -12,6 +12,8 @@
 require "uri"
 require "rack"
 
+$LOADED_FEATURES << "camping.rb"
+
 class Object #:nodoc:
   def meta_def(m,&b) #:nodoc:
     (class<<self;self end).send(:define_method,m,&b)
@@ -46,6 +48,7 @@ module Camping
   S = IO.read(__FILE__) rescue nil
   P = "<h1>Cam\ping Problem!</h1><h2>%s</h2>"
   U = Rack::Utils
+  O = {}
   Apps = []
   # An object-like Hash.
   # All Camping query string and cookie variables are loaded as this.
@@ -183,7 +186,7 @@ module Camping
       raise "bad route" unless u = c.urls.find{|x|
         break x if x.scan(p).size == g.size && 
           /^#{x}\/?$/ =~ (x=g.inject(x){|x,a|
-            x.sub p,U.escape((a[a.class.primary_key]rescue a))})
+            x.sub p,U.escape((a.to_param rescue a))}.gsub(/\\(.)/){$1})
       }
       h.any?? u+"?"+U.build_query(h[0]) : u
     end
@@ -195,7 +198,7 @@ module Camping
     #   self / "styles.css" #=> "styles.css"
     #   self / R(Edit, 1)   #=> "/blog/edit/1"
     #
-    def /(p); p[0]==?/?@root+p:p end
+    def /(p); p[0] == ?/ ? @root + p : p end
     
     # Builds a URL route to a controller or a path, returning a URI object.
     # This way you'll get the hostname and the port number, a complete URL.
@@ -235,7 +238,25 @@ module Camping
   module Base
     attr_accessor :env, :request, :root, :input, :cookies, :state,
                   :status, :headers, :body
-
+    
+    T = {}
+    L = :layout
+    
+    # Finds a template, returning either:
+    # 
+    #   false             # => Could not find template
+    #   true              # => Found template in Views
+    #   instance of Tilt  # => Found template in a file
+    def lookup(n)
+      T.fetch(n.to_sym) do |k|
+        t = Views.method_defined?(k) ||
+          (f = Dir[[O[:views] || "views", "#{n}.*"]*'/'][0]) &&
+          Template.new(f, O[f[/\.(\w+)$/, 1].to_sym] || {})
+        
+        O[:dynamic_templates] ? t : T[k] = t
+      end
+    end
+    
     # Display a view, calling it by its method name +v+.  If a <tt>layout</tt>
     # method is found in Camping::Views, it will be used to wrap the HTML.
     #
@@ -248,8 +269,15 @@ module Camping
     #     end
     #   end
     #
-    def render(v,*a,&b)
-      mab(/^_/!~v.to_s){send(v,*a,&b)}
+    def render(v, *a, &b)
+      if t = lookup(v)
+        o = Hash === a[-1] ? a.pop : {}
+        s = (t == true) ? mab{ send(v, *a, &b) } : t.render(self, o[:locals] || {}, &b)
+        s = render(L, o.merge(L => false)) { s } if v.to_s[0] != ?_ && o[L] != false && lookup(L)
+        s
+      else
+        raise "Can't find template #{v}"
+      end
     end
 
     # You can directly return HTML form your controller for quick debugging
@@ -262,11 +290,8 @@ module Camping
     #   end
     #
     # You can also pass true to use the :layout HTML wrapping method
-    def mab(l=nil,&b)
-      m=Mab.new({},self)
-      s=m.capture(&b)
-      s=m.capture{layout{s}} if l && m.respond_to?(:layout)
-      s
+    def mab(&b)
+      (@mab ||= Mab.new({},self)).capture(&b)
     end
     
     # A quick means of setting this controller's status, body and headers
@@ -355,7 +380,7 @@ module Camping
     #     end
     #   end
     def to_a
-      @env['rack.session'] = @state
+      @env['rack.session'] = Hash[@state]
       r = Rack::Response.new(@body, @status, @headers)
       @cookies.each do |k, v|
         next if @old_cookies[k] == v
@@ -521,7 +546,7 @@ module Camping
         p = '/' if !p || !p[0]
         r.map { |k|
           k.urls.map { |x|
-            return (k.instance_method(m) rescue nil) ?
+            return (k.method_defined?(m)) ?
               [k, m, *$~[1..-1]] : [I, 'r501', m] if p =~ /^#{x}\/?$/
           }
         }
@@ -549,7 +574,7 @@ module Camping
           k = const_get(c)
           k.send :include,C,Base,Helpers,Models
           @r=[k]+r if r-[k]==r
-          k.meta_def(:urls){["/#{c.scan(/.[^A-Z]*/).map(&N.method(:[]))*'/'}"]}if !k.respond_to?:urls
+          k.meta_def(:urls){["/#{c.to_s.scan(/.[^A-Z]*/).map(&N.method(:[]))*'/'}"]}if !k.respond_to?:urls
         }
       end
     end
@@ -627,6 +652,20 @@ module Camping
       m = a.shift.new(method(:call), *a, &b)
       meta_def(:call) { |e| m.call(e) }
     end
+    
+    # A hash where you can set different settings.
+    def options
+      O
+    end
+    
+    # Shortcut for setting options:
+    # 
+    #   module Blog
+    #     set :secret, "Hello!"
+    #   end
+    def set(k, v)
+      O[k] = v
+    end
   end
   
   # Views is an empty module for storing methods which create HTML. The HTML
@@ -696,6 +735,7 @@ module Camping
   end
  
   autoload :Mab, 'camping/mab'
+  autoload :Template, 'camping/template'
   C
 end
 

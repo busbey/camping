@@ -10,7 +10,7 @@ task :default => :check
 
 ## Constants
 NAME = "camping"
-BRANCH = "1.9"
+BRANCH = "2.0"
 GIT = ENV['GIT'] || "git"
 REV = `#{GIT} rev-list HEAD`.strip.split.length
 VERS = ENV['VERSION'] || (REV.zero? ? BRANCH : [BRANCH, REV] * '.')
@@ -123,7 +123,7 @@ end
 
 ## Tests
 Rake::TestTask.new(:test) do |t|
-  t.test_files = FileList['test/test_*.rb']
+  t.test_files = FileList['test/app_*.rb']
 #  t.warning = true
 #  t.verbose = true
 end
@@ -139,14 +139,19 @@ task :diff do
   u << Ruby2Ruby.new.process(RubyParser.new.parse(File.read("lib/camping.rb")))
   m << Ruby2Ruby.new.process(RubyParser.new.parse(File.read("lib/camping-unabridged.rb")))
   
+  u.flush
+  m.flush
+  
   sh "diff -u #{u.path} #{m.path} | less"
   
   u.delete
   m.delete
 end
 
+error = false
+
 ## Check
-task :check => ["check:valid", "check:size", "check:lines"]
+task :check => ["test", "check:valid", "check:size", "check:lines", "check:exit"]
 namespace :check do
 
   desc "Check source code validity"
@@ -155,8 +160,13 @@ namespace :check do
     u = RubyParser.new.parse(File.read("lib/camping-unabridged.rb"))
     m = RubyParser.new.parse(File.read("lib/camping.rb"))
     
+    u.reject! do |sexp|
+      sexp.is_a?(Sexp) and sexp[1] == s(:gvar, :$LOADED_FEATURES)
+    end
+    
     unless u == m
       STDERR.puts "camping.rb and camping-unabridged.rb are not synchronized."
+      error = true
     end
   end
 
@@ -169,6 +179,7 @@ namespace :check do
     end
     if File.size("lib/camping.rb") > SIZE_LIMIT
       STDERR.puts "lib/camping.rb: file is too big (> #{SIZE_LIMIT})"
+      error = true
     end
   end
 
@@ -177,10 +188,15 @@ namespace :check do
     i = 1
     File.open("lib/camping.rb").each_line do |line|
       if line.size > 81 # 1 added for \n
+        error = true
         STDERR.puts "lib/camping.rb:#{i}: line too long (#{line[-10..-1].inspect})"
       end
       i += 1
     end
+  end
+  
+  task :exit do
+    exit 1 if error
   end
 
 end
