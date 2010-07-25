@@ -62,7 +62,14 @@ $AR_EXTRAS =<<END
       @abstract_class = true
       @V = v
       meta_def(:inherited) do |model|
-        # We only need a migration when our direct descendant comes to be
+        # We only need a migration when our direct descendant comes to be.
+        # when people use ActiveRecord's inheritence-to-put-subtypes-in-one-table
+        # feature, this function will get called on our direct descendant (because it 
+        # inherited this function).  Since @V is a class-instance variable, we've
+        # only set it in our magic Base-derivative.
+        #
+        # If we had used @@V, a class variable, then it would be shared by our child classes
+        # and we'd end up making additional migrations and erroring out on remaking a table.
         if @V
           Class.new(@V) do
             @model = model; @opts = opts; @block = block
