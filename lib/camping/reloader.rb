@@ -33,13 +33,13 @@ module Camping
   # You can also give Reloader more than one script.
   class Reloader
     attr_reader :scripts, :apps
-    
+
     # This class is doing all the hard work; however, it only works on
     # single files.  Reloader just wraps up support for multiple scripts
     # and hides away some methods you normally won't need.
     class Script # :nodoc:
       attr_reader :apps, :file, :dir, :extras
-      
+
       def initialize(file, callback = nil)
         @file = File.expand_path(file)
         @dir = File.dirname(@file)
@@ -49,13 +49,13 @@ module Camping
         @apps = {}
         @callback = callback
       end
-      
+
       # Loads the apps availble in this script.  Use <tt>apps</tt> to get
       # the loaded apps.
       def load_apps
         all_requires = $LOADED_FEATURES.dup
         all_apps = Camping::Apps.dup
-        
+
         begin
           load(@file)
         rescue Exception => e
@@ -64,31 +64,31 @@ module Camping
           puts e.backtrace
           puts "!! Error loading #{@file}, see backtrace above"
         end
-        
+
         @requires = ($LOADED_FEATURES - all_requires).map do |req|
           full = full_path(req)
           full if full == @file or full.index(@extras) == 0
         end
-        
+
         @mtime = mtime
-        
+
         new_apps = (Camping::Apps - all_apps)
         old_apps = @apps.dup
-        
+
         @apps = new_apps.inject({}) do |hash, app|
           key = app.name.to_sym
           hash[key] = app
-          
+
           if !old_apps.include?(key)
             @callback.call(app) if @callback
             app.create if app.respond_to?(:create)
           end
           hash
         end
-        
+
         self
       end
-      
+
       # Removes all the apps defined in this script.
       def remove_apps
         @apps.each do |name, app|
@@ -96,7 +96,7 @@ module Camping
           Object.send :remove_const, name
         end
       end
-      
+
       # Reloads the file if needed.  No harm is done by calling this multiple
       # times, so feel free call just to be sure.
       def reload!
@@ -104,24 +104,24 @@ module Camping
         remove_apps
         load_apps
       end
-      
+
       # Checks if both scripts watches the same file.
       def ==(other)
         @file == other.file
       end
-      
+
       private
-      
+
       def mtime
         (@requires + [@file]).compact.map do |fname|
           File.mtime(fname)
         end.reject{|t| t > Time.now }.max
       end
-      
-      # Figures out the full path of a required file. 
+
+      # Figures out the full path of a required file.
       def full_path(req)
         dir = $LOAD_PATH.detect { |l| File.exists?(File.join(l, req)) }
-        if dir 
+        if dir
           File.join(File.expand_path(dir), req)
         else
           req
@@ -137,42 +137,42 @@ module Camping
       @apps = {}
       update(*scripts)
     end
-    
+
     def on_reload(&blk)
       @callback = blk
     end
-    
+
     # Updates the reloader to only use the scripts provided:
     #
     #   reloader.update("examples/blog.rb", "examples/wiki.rb")
     def update(*scripts)
       old_scripts = @scripts.dup
       clear
-      
+
       @scripts = scripts.map do |script|
         file = File.expand_path(script)
         old_scripts.detect { |s| s.file == file } or
         Script.new(script, @callback)
       end
-      
+
       reload!
     end
-    
+
     # Removes all the scripts from the reloader.
     def clear
       @scripts = []
       @apps = {}
     end
-    
+
     # Returns the script which provided the given app.
     def script(app)
       @scripts.each do |script|
         return script if script.apps.values.include?(app)
       end
-      
+
       false
     end
-    
+
     # Simply calls reload! on all the Script objects.
     def reload!
       @apps = {}

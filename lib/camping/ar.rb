@@ -56,7 +56,7 @@ $AR_EXTRAS =<<END
   # When you finally need a non-destructive table change adding a migration with a positive
   # number will run as expected, but will preclude further automatic table creation. :(
   def self.Base(opts={}, &block)
-    @final = -2 if @final.nil?	
+    @final = -2 if @final.nil?
     v = V -1.0/(1+(@migrations ||= []).size)
     Class.new(Base) do
       @abstract_class = true
@@ -64,7 +64,7 @@ $AR_EXTRAS =<<END
       meta_def(:inherited) do |model|
         # We only need a migration when our direct descendant comes to be.
         # when people use ActiveRecord's inheritence-to-put-subtypes-in-one-table
-        # feature, this function will get called on our direct descendant (because it 
+        # feature, this function will get called on our direct descendant (because it
         # inherited this function).  Since @V is a class-instance variable, we've
         # only set it in our magic Base-derivative.
         #

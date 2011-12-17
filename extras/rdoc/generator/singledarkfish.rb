@@ -17,34 +17,34 @@ require 'uri'
 
 #
 #  Darkfish RDoc HTML Generator
-#  
+#
 #  $Id: darkfish.rb 52 2009-01-07 02:08:11Z deveiant $
 #
 #  == Author/s
 #  * Michael Granger (ged@FaerieMUD.org)
-#  
+#
 #  == Contributors
 #  * Mahlon E. Smith (mahlon@martini.nu)
 #  * Eric Hodel (drbrain@segment7.net)
-#  
+#
 #  == License
-#  
+#
 #  Copyright (c) 2007, 2008, Michael Granger. All rights reserved.
-#  
+#
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions are met:
-#  
+#
 #  * Redistributions of source code must retain the above copyright notice,
 #    this list of conditions and the following disclaimer.
-#  
+#
 #  * Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-#  
+#
 #  * Neither the name of the author/s, nor the names of the project's
 #    contributors may be used to endorse or promote products derived from this
 #    software without specific prior written permission.
-#  
+#
 #  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 #  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 #  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -55,10 +55,10 @@ require 'uri'
 #  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 #  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#  
+#
 class RDoc::Generator::SingleDarkfish < RDoc::Generator::Darkfish
 	RDoc::RDoc.add_generator( self )
-	
+
   RDoc::Context.instance_eval do
     org = instance_method(:http_url)
     define_method(:http_url) do |prefix|
@@ -69,7 +69,7 @@ class RDoc::Generator::SingleDarkfish < RDoc::Generator::Darkfish
       end
     end
   end
-  
+
   RDoc::AnyMethod.instance_eval do
     org = instance_method(:path)
     define_method(:path) do
@@ -80,7 +80,7 @@ class RDoc::Generator::SingleDarkfish < RDoc::Generator::Darkfish
       end
     end
   end
-  
+
   def self.current?
     RDoc::RDoc.current.generator.class.ancestors.include?(self)
   end
@@ -113,15 +113,15 @@ class RDoc::Generator::SingleDarkfish < RDoc::Generator::Darkfish
 	######
 	public
 	######
-	
+
 	def class_dir
 	  '/api.html#class-'
-  end 
-  
+  end
+
   def template(name)
     "#{name}.rhtml"
   end
-  
+
 	### Build the initial indices and output objects
 	### based on an array of TopLevel objects containing
 	### the extracted information.
@@ -133,7 +133,7 @@ class RDoc::Generator::SingleDarkfish < RDoc::Generator::Darkfish
 		@methods = @classes.map { |m| m.method_list }.flatten.sort
 		@modsort = get_sorted_module_list( @classes )
 
-		# Now actually write the output 
+		# Now actually write the output
 		write_style_sheet
     generate_thing(:readme,    'index.html')
 	  generate_thing(:reference, 'api.html')
@@ -143,7 +143,7 @@ class RDoc::Generator::SingleDarkfish < RDoc::Generator::Darkfish
 		debug_msg "%s: %s\n  %s" % [ err.class.name, err.message, err.backtrace.join("\n  ") ]
 		raise
 	end
-	
+
 	def generate_book
 	  chapters.each do |file|
 	  	templatefile = @template_dir + template(:page)
@@ -152,7 +152,7 @@ class RDoc::Generator::SingleDarkfish < RDoc::Generator::Darkfish
   	  render_template(templatefile, binding, outfile)
     end
   end
-	
+
 	def generate_thing(name, to)
 		debug_msg "Rendering #{name}..."
 
@@ -163,7 +163,7 @@ class RDoc::Generator::SingleDarkfish < RDoc::Generator::Darkfish
 
     render_template(templatefile, binding, outfile)
 	end
-	
+
 	def methods_for(klass)
     klass.methods_by_type.each do |type, visibilities|
 	    next if visibilities.empty?
@@ -175,28 +175,28 @@ class RDoc::Generator::SingleDarkfish < RDoc::Generator::Darkfish
       end
     end
   end
-	
+
 	## For book.rhtml
-	
+
 	def chapters
     @chapters ||= @files.select do |file|
       next unless file.full_name =~ /^book\//
-      
+
       (class << file; self; end).class_eval { attr_accessor :title, :content, :toc, :id }
       file.toc = []
       file.content = file.description
       file.title = file.content[%r{<h1>(.*?)</h1>}, 1]
-      
+
       file.content.gsub!(%r{<h2>(.*?)</h2>}) do |match|
         arr = [make_id($1), $1]
         file.toc << arr
         '<h2 class="ruled" id="%s">%s</h2>' % arr
       end
-      
-      true 
+
+      true
     end
   end
-  
+
   def make_id(title)
     title.downcase.gsub(/\s/, '-').gsub(/[^\w-]+/, '')
   end

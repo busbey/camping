@@ -14,7 +14,7 @@ got it going.
 A skeletal Camping blog could look like this:
 
   require 'camping'
-  
+
   Camping.goes :Blog
 
   module Blog::Models
@@ -49,7 +49,7 @@ A skeletal Camping blog could look like this:
       end
     end
   end
-  
+
 == Installation
 
 Interested yet?  Luckily it's quite easy to install Camping.  We'll be using
@@ -69,7 +69,7 @@ need to install +markaby+, and if you're going to use the database you need
 
     gem install markaby
     gem install activerecord
- 
+
 == Learning
 
 First of all, you should read {the first chapters}[link:book/01_introduction.html]
@@ -81,7 +81,7 @@ documentation for all the different parts of Camping.
 useful tricks that we've collected over the years.  Don't be afraid to share
 your own discoveries; the more, the better!
 
-And if there's anything you're wondering about, don't be shy, but rather 
+And if there's anything you're wondering about, don't be shy, but rather
 subscribe to {the mailing list}[http://rubyforge.org/mailman/listinfo/camping-list]
 and ask there.  We also have an IRC channel over at Freenode, so if you feel
 like chatting with us, you should join {#camping @ irc.freenode.net}[http://java.freenode.net/?channel=camping].

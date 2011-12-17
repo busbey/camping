@@ -17,7 +17,7 @@ VERS = ENV['VERSION'] || (REV.zero? ? BRANCH : [BRANCH, REV] * '.')
 
 CLEAN.include ['**/.*.sw?', '*.gem', '.config', 'test/test.log', '.*.pt']
 RDOC_OPTS = ["--line-numbers", "--quiet", "--main", "README"]
-    
+
 ## Packaging
 spec =
   Gem::Specification.new do |s|
@@ -38,14 +38,14 @@ spec =
     s.required_ruby_version = '>= 1.8.2'
 
     s.files = %w(COPYING README Rakefile) +
-    Dir.glob("{bin,doc,test,lib,extras,book}/**/*") + 
+    Dir.glob("{bin,doc,test,lib,extras,book}/**/*") +
     Dir.glob("ext/**/*.{h,c,rb}") +
     Dir.glob("examples/**/*.rb") +
     Dir.glob("tools/*.rb")
 
     s.require_path = "lib"
     s.bindir = "bin"
-  end                   
+  end
 
 omni =
   Gem::Specification.new do |s|
@@ -61,7 +61,7 @@ omni =
     s.add_dependency('mongrel')
     s.add_dependency('RedCloth')
   end
-  
+
 ## RDoc
 
 begin
@@ -85,16 +85,16 @@ Rake::RDocTask.new(:docs) do |rdoc|
       puts "** Camping needs RDoc 2.4 in order to use the Flipbook template."
     end
   end
-  
+
   rdoc.inline_source = false # --inline-source is deprecated
   rdoc.rdoc_dir = 'doc'
   rdoc.title = "Camping, a Microframework"
   rdoc.rdoc_files.add ['README', 'lib/camping-unabridged.rb', 'lib/camping/**/*.rb', 'book/*']
 end
-  
+
 task :rubygems_docs do
   require 'rubygems/doc_manager'
-  
+
   def spec.installation_path; '.' end
   def spec.full_gem_path;     '.' end
   manager = Gem::DocManager.new(spec)
@@ -135,15 +135,15 @@ task :diff do
   require 'ruby_parser'
   u = Tempfile.new('unabridged')
   m = Tempfile.new('mural')
-  
+
   u << Ruby2Ruby.new.process(RubyParser.new.parse(File.read("lib/camping.rb")))
   m << Ruby2Ruby.new.process(RubyParser.new.parse(File.read("lib/camping-unabridged.rb")))
-  
+
   u.flush
   m.flush
-  
+
   sh "diff -u #{u.path} #{m.path} | less"
-  
+
   u.delete
   m.delete
 end
@@ -159,11 +159,11 @@ namespace :check do
     require 'ruby_parser'
     u = RubyParser.new.parse(File.read("lib/camping-unabridged.rb"))
     m = RubyParser.new.parse(File.read("lib/camping.rb"))
-    
+
     u.reject! do |sexp|
       sexp.is_a?(Sexp) and sexp[1] == s(:gvar, :$LOADED_FEATURES)
     end
-    
+
     unless u == m
       STDERR.puts "camping.rb and camping-unabridged.rb are not synchronized."
       error = true
@@ -194,7 +194,7 @@ namespace :check do
       i += 1
     end
   end
-  
+
   task :exit do
     exit 1 if error
   end
