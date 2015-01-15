@@ -16,14 +16,14 @@ module Sessions::Controllers
       redirect R(Two)
     end
   end
-  
+
   class Two
     def get
       @state.two = 56
       redirect R(Three)
     end
   end
-  
+
   class Three
     def get
       @state.three = 99
@@ -36,10 +36,10 @@ class Sessions::Test < TestCase
   def test_session
     get '/one'
     follow_redirect!
-    
+
     get '/two'
     follow_redirect!
-    
+
     get '/three'
     assert_body "[42, 56, 99]"
   end

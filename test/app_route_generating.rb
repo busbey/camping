@@ -9,7 +9,7 @@ module Routes::Controllers
       R(Style)
     end
   end
-  
+
   class Style < R '/style\.css'
   end
 end

@@ -12,7 +12,7 @@ $MAB_CODE = %{
   # path.
   class Mab < Markaby::Builder
     attr_reader :builder
-    
+
     include Views
     def tag!(*g,&b)
       h=g[-1]

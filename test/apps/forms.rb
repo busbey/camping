@@ -55,7 +55,7 @@ module Forms
         input :type=>:text, :name=>"arr[]"; br
         input :type=>:text, :name=>"hash[x]"; br
         input :type=>:text, :name=>"hash[y]"; br
- 
+
         input :type=>:submit
       end
     end
@@ -68,7 +68,7 @@ module Forms
         input :type=>:text, :name=>"arr[]"; br
         input :type=>:text, :name=>"hash[x]"; br
         input :type=>:text, :name=>"hash[y]"; br
- 
+
         input :type=>:submit
       end
     end

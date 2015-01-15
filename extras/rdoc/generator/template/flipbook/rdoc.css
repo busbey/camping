@@ -73,9 +73,9 @@ h2.ruled { padding-top: 35px; border-top: solid 1px #AA5; }
 .ref h2 a {
   background-color: #eee;
   color: black;
-  display: block;    
+  display: block;
   text-align: left;
-  text-decoration: none;   
+  text-decoration: none;
   padding: 0.5em 1em;
 }
 

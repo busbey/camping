@@ -7,7 +7,7 @@ require 'camping/reloader'
 #
 # Camping includes a pretty nifty server which is built for development.
 # It follows these rules:
-# 
+#
 # * Load all Camping apps in a directory or a file.
 # * Load new apps that appear in that directory or that file.
 # * Mount those apps according to their name. (e.g. Blog is mounted at /blog.)
@@ -36,39 +36,39 @@ module Camping
         DB = nil
         RC = nil
       end
-      
+
       HOME = File.expand_path(home) + '/'
-      
+
       def parse!(args)
         args = args.dup
         options = {}
-        
+
         opt_parser = OptionParser.new("", 24, '  ') do |opts|
           opts.banner = "Usage: camping app1.rb app2.rb..."
           opts.define_head "#{File.basename($0)}, the microframework ON-button for ruby #{RUBY_VERSION} (#{RUBY_RELEASE_DATE}) [#{RUBY_PLATFORM}]"
           opts.separator ""
           opts.separator "Specific options:"
-          
+
           opts.on("-h", "--host HOSTNAME",
           "Host for web server to bind to (default is all IPs)") { |v| options[:Host] = v }
-          
+
           opts.on("-p", "--port NUM",
           "Port for web server (defaults to 3301)") { |v| options[:Port] = v }
-          
+
           db = DB.sub(HOME, '~/') if DB
           opts.on("-d", "--database FILE",
           "SQLite3 database path (defaults to #{db ? db : '<none>'})") { |db_path| options[:database] = db_path }
-          
+
           opts.on("-C", "--console",
           "Run in console mode with IRB") { options[:server] = "console" }
-          
+
           server_list = ["mongrel", "webrick", "console"]
           opts.on("-s", "--server NAME",
           "Server to force (#{server_list.join(', ')})") { |v| options[:server] = v }
 
           opts.separator ""
           opts.separator "Common options:"
-          
+
           # No argument, shows at tail.  This will print an options summary.
           # Try it and see!
           opts.on_tail("-?", "--help", "Show this message") do
@@ -82,19 +82,19 @@ module Camping
             exit
           end
         end
-        
+
         opt_parser.parse!(args)
-        
+
         if args.empty?
           puts opt_parser
           exit
         end
-        
+
         options[:scripts] = args
         options
       end
     end
-    
+
     def initialize(*)
       super
       @reloader = Camping::Reloader.new
@@ -102,7 +102,7 @@ module Camping
         if !app.options.has_key?(:dynamic_templates)
 		      app.options[:dynamic_templates] = true
 	      end
-	      
+
         if !Camping::Models.autoload?(:Base) && options[:database]
           Camping::Models::Base.establish_connection(
             :adapter => 'sqlite3',
@@ -111,7 +111,7 @@ module Camping
         end
       end
     end
-    
+
     def opt_parser
       Options.new
     end
@@ -122,7 +122,7 @@ module Camping
         :database => Options::DB
       })
     end
-    
+
     def middleware
       h = super
       h["development"].unshift [XSendfile]
@@ -144,7 +144,7 @@ module Camping
         super
       end
     end
-    
+
     def find_scripts
       scripts = options[:scripts].map do |path|
         if File.file?(path)
@@ -153,18 +153,18 @@ module Camping
           Dir[File.join(path, '*.rb')]
         end
       end.flatten.compact
-	  
+
       @reloader.update(*scripts)
     end
-    
+
     def reload!
       find_scripts
     end
-    
+
     def app
       self
     end
-    
+
     def call(env)
       reload!
       apps = @reloader.apps
@@ -186,24 +186,24 @@ module Camping
             return [200, {'Content-Type' => 'text/plain', 'X-Sendfile' => @reloader.script(app).file}, []]
           end
         end
-        
+
         index_page(apps)
       end
     end
-    
+
     def index_page(apps)
       [200, {'Content-Type' => 'text/html'}, [TEMPLATE.result(binding)]]
     end
-    
+
     SOURCE = <<-HTML
 <html>
   <head>
     <title>You are Camping</title>
     <style type="text/css">
-      body { 
-        font-family: verdana, arial, sans-serif; 
-        padding: 10px 40px; 
-        margin: 0; 
+      body {
+        font-family: verdana, arial, sans-serif;
+        padding: 10px 40px;
+        margin: 0;
       }
       h1, h2, h3, h4, h5, h6 {
         font-family: utopia, georgia, serif;
@@ -230,27 +230,27 @@ module Camping
   </body>
 </html>
     HTML
-    
+
     TEMPLATE = ERB.new(SOURCE)
-    
+
     class XSendfile
       def initialize(app)
         @app = app
       end
-      
+
       def call(env)
         status, headers, body = @app.call(env)
-        
+
         if key = headers.keys.grep(/X-Sendfile/i).first
           filename = headers[key]
           content = open(filename,'rb') { | io | io.read}
           headers['Content-Length'] = size(content).to_s
           body = [content]
         end
-        
+
         return status, headers, body
       end
-      
+
       if "".respond_to?(:bytesize)
         def size(str)
           str.bytesize
